@@ -11,6 +11,12 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 const ITEMS_PER_BATCH = 12;
 const REGIONS = ["Africa", "Americas", "Asia", "Europe", "Oceania"];
 
+// Define API endpoints
+const ENDPOINTS = {
+  ALL: `${API_BASE_URL}/countries`,
+  SEARCH: `${API_BASE_URL}/countries/search`,
+};
+
 const CountriesPage = () => {
   const [countries, setCountries] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -18,6 +24,7 @@ const CountriesPage = () => {
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState(null);
   const observerTarget = useRef(null);
+  const errorTimeoutRef = useRef(null);
 
   const [filters, setFilters] = useState({
     search: "",
@@ -29,6 +36,24 @@ const CountriesPage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedRegions, setSelectedRegions] = useState([]);
   const [appliedFilters, setAppliedFilters] = useState(0);
+
+  const showError = (message) => {
+    setError(message);
+    if (errorTimeoutRef.current) {
+      clearTimeout(errorTimeoutRef.current);
+    }
+    errorTimeoutRef.current = setTimeout(() => {
+      setError(null);
+    }, 3000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -52,26 +77,48 @@ const CountriesPage = () => {
     setLoading(true);
 
     try {
-      const params = new URLSearchParams({
-        page: page,
+      let endpoint = ENDPOINTS.ALL;
+      let params = {
+        page,
         limit: ITEMS_PER_BATCH,
-        ...filters,
-        regions: selectedRegions.join(","),
-      });
+      };
 
-      const response = await axios.get(`${API_BASE_URL}/countries?${params}`);
+      // Use search endpoint if there are any search criteria
+      if (filters.search || selectedRegions.length > 0) {
+        endpoint = ENDPOINTS.SEARCH;
+        params = {
+          ...params,
+          name: filters.search,
+          region: selectedRegions.join(","),
+        };
+      }
 
+      // Add other filters if they exist
+      if (filters.languages) params.languages = filters.languages;
+      if (filters.timezone) params.timezone = filters.timezone;
+      if (filters.sortBy) params.sortBy = filters.sortBy;
+
+      const response = await axios.get(endpoint, { params });
       const newData = response.data.data;
 
-      setCountries((prev) => [...prev, ...newData]);
+      setCountries((prev) => (page === 1 ? newData : [...prev, ...newData]));
       setHasMore(newData.length === ITEMS_PER_BATCH);
       setPage((prev) => prev + 1);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to fetch countries");
+      console.error("Error fetching countries:", err);
+      showError(err.response?.data?.message || "Failed to fetch countries");
     } finally {
       setLoading(false);
     }
   };
+
+  // Reset and reload when filters change
+  useEffect(() => {
+    setPage(1);
+    setCountries([]);
+    setHasMore(true);
+    loadMoreCountries();
+  }, [filters.search, selectedRegions]);
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -88,8 +135,8 @@ const CountriesPage = () => {
   };
 
   const resetPagination = () => {
-    setCountries([]);
     setPage(1);
+    setCountries([]);
     setHasMore(true);
   };
 
@@ -113,6 +160,22 @@ const CountriesPage = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
+      {error && (
+        <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-right duration-300">
+          <div className="bg-red-50 text-red-500 px-6 py-4 rounded-lg shadow-lg">
+            <div className="flex items-center gap-2">
+              <span>{error}</span>
+              <button
+                onClick={() => setError(null)}
+                className="text-red-400 hover:text-red-600"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="sticky top-0 z-10 bg-white shadow-md p-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -176,14 +239,14 @@ const CountriesPage = () => {
       </div>
 
       <main className="flex-1 p-4 max-w-7xl mx-auto w-full">
-        {error && (
-          <div className="text-red-500 p-4 text-center bg-red-50 rounded mb-4">
-            {error}
-          </div>
-        )}
-
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-fr">
-          <Suspense fallback={<Loader2 />}>
+          <Suspense
+            fallback={
+              <div className="col-span-full flex justify-center p-8">
+                <Loader2 className="w-8 h-8 animate-spin" />
+              </div>
+            }
+          >
             {countries.map((country, index) => (
               <LazyCountryCard
                 key={`${country.name}-${index}`}
