@@ -83,7 +83,6 @@ const CountriesPage = () => {
       if (filters.search || selectedRegions.length > 0) {
         endpoint = ENDPOINTS.SEARCH;
         params = {
-          ...params,
           name: filters.search,
           region: selectedRegions.join(","),
         };
