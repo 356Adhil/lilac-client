@@ -10,10 +10,6 @@ const LazyCountryCard = React.lazy(() => import("../components/Cards"));
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 const ITEMS_PER_BATCH = 12;
 const REGIONS = ["Africa", "Americas", "Asia", "Europe", "Oceania"];
-const SORT_OPTIONS = [
-  { value: "name", label: "Name (A-Z)" },
-  { value: "name-desc", label: "Name (Z-A)" },
-];
 
 const CountriesPage = () => {
   const [countries, setCountries] = useState([]);
@@ -162,25 +158,6 @@ const CountriesPage = () => {
                       </button>
                     ))}
                   </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
-                    Sort By
-                  </label>
-                  <select
-                    value={filters.sortBy}
-                    onChange={(e) =>
-                      handleFilterChange("sortBy", e.target.value)
-                    }
-                    className="mt-1 block w-full rounded-md border border-gray-300 py-2 px-3"
-                  >
-                    {SORT_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
                 </div>
 
                 <div className="flex items-end">
