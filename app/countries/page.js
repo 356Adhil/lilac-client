@@ -11,7 +11,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 const ITEMS_PER_BATCH = 12;
 const REGIONS = ["Africa", "Americas", "Asia", "Europe", "Oceania"];
 
-// Define API endpoints
 const ENDPOINTS = {
   ALL: `${API_BASE_URL}/countries`,
   SEARCH: `${API_BASE_URL}/countries/search`,
@@ -29,9 +28,7 @@ const CountriesPage = () => {
   const [filters, setFilters] = useState({
     search: "",
     region: "",
-    languages: "",
     timezone: "",
-    sortBy: "name",
   });
   const [showFilters, setShowFilters] = useState(false);
   const [selectedRegions, setSelectedRegions] = useState([]);
@@ -83,7 +80,6 @@ const CountriesPage = () => {
         limit: ITEMS_PER_BATCH,
       };
 
-      // Use search endpoint if there are any search criteria
       if (filters.search || selectedRegions.length > 0) {
         endpoint = ENDPOINTS.SEARCH;
         params = {
@@ -93,10 +89,7 @@ const CountriesPage = () => {
         };
       }
 
-      // Add other filters if they exist
-      if (filters.languages) params.languages = filters.languages;
       if (filters.timezone) params.timezone = filters.timezone;
-      if (filters.sortBy) params.sortBy = filters.sortBy;
 
       const response = await axios.get(endpoint, { params });
       const newData = response.data.data;
@@ -112,17 +105,20 @@ const CountriesPage = () => {
     }
   };
 
-  // Reset and reload when filters change
+  // Remove the automatic search on filter change
   useEffect(() => {
-    setPage(1);
-    setCountries([]);
-    setHasMore(true);
-    loadMoreCountries();
-  }, [filters.search, selectedRegions]);
+    setAppliedFilters(
+      Object.values(filters).filter((v) => v).length + selectedRegions.length
+    );
+  }, [filters, selectedRegions]);
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSearch = () => {
     resetPagination();
+    loadMoreCountries();
   };
 
   const handleRegionToggle = (region) => {
@@ -131,7 +127,6 @@ const CountriesPage = () => {
         ? prev.filter((r) => r !== region)
         : [...prev, region]
     );
-    resetPagination();
   };
 
   const resetPagination = () => {
@@ -144,19 +139,12 @@ const CountriesPage = () => {
     setFilters({
       search: "",
       region: "",
-      languages: "",
       timezone: "",
-      sortBy: "name",
     });
     setSelectedRegions([]);
     resetPagination();
+    loadMoreCountries();
   };
-
-  useEffect(() => {
-    setAppliedFilters(
-      Object.values(filters).filter((v) => v).length + selectedRegions.length
-    );
-  }, [filters, selectedRegions]);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -182,6 +170,7 @@ const CountriesPage = () => {
             <SearchForm
               value={filters.search}
               onChange={(value) => handleFilterChange("search", value)}
+              onSearch={handleSearch}
               className="w-full md:w-96"
             />
 
