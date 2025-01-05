@@ -2,20 +2,77 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* globals.css */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Arial, sans-serif;
+}
+
+.spinner {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.loader {
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid #3498db;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.country-card {
+  border: 1px solid #ddd;
+  padding: 16px;
+  margin: 8px;
+  border-radius: 8px;
+  background-color: #fff;
+}
+
+.country-card img {
+  margin-bottom: 8px;
+}
+
+.search-form {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.search-input {
+  padding: 8px;
+  margin-right: 8px;
+  width: 250px;
+}
+
+button {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.countries-page {
+  padding: 20px;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.countries-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
 }
